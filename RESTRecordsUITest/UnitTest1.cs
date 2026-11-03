@@ -1,4 +1,5 @@
-﻿using OpenQA.Selenium;
+﻿
+using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 
@@ -6,19 +7,15 @@ namespace RESTRecordsUITest
 {
     public class RecordsSearchTests : IDisposable
     {
-        private readonly IWebDriver driver;
-        private readonly WebDriverWait wait;
+        private IWebDriver driver;
+        private WebDriverWait wait;
 
-        private readonly string url =
-            "http://127.0.0.1:5500/index.html";
+        private string url = "http://127.0.0.1:5500/index.html";
 
         public RecordsSearchTests()
         {
             driver = new ChromeDriver();
-
-            wait = new WebDriverWait(
-                driver,
-                TimeSpan.FromSeconds(10));
+            wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
         }
 
         public void Dispose()
@@ -30,66 +27,191 @@ namespace RESTRecordsUITest
         [Fact]
         public void BrowserOpensProject_WithTitleRecords()
         {
-            // Act
             driver.Navigate().GoToUrl(url);
 
-            wait.Until(browser =>
-                browser.Title == "Records");
-
-            // Assert
             Assert.Equal("Records", driver.Title);
         }
 
         [Fact]
         public void SearchByTitle_ShowsOnlyMatchingRecord()
         {
-            // Arrange
             driver.Navigate().GoToUrl(url);
 
-            wait.Message = "De tre eksempeludgivelser blev ikke indlæst.";
-
+            // Wait for the three records to load
             wait.Until(browser =>
-                browser.FindElement(By.Id("recordsBody"))
-                    .FindElements(By.TagName("tr")).Count == 3);
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 3);
 
-            // Act
-            var searchType = new SelectElement(
-                driver.FindElement(
-                    By.Id("searchType")));
+            // Select search type
+            IWebElement searchType = driver.FindElement(By.Id("searchType"));
+            new SelectElement(searchType).SelectByValue("title");
 
-            searchType.SelectByValue("title");
-
-            var searchInput = driver.FindElement(
-                By.Id("searchInput"));
-
-            searchInput.Clear();
+            // Enter search value
+            IWebElement searchInput = driver.FindElement(By.Id("searchInput"));
             searchInput.SendKeys("Song 2");
 
-            driver.FindElement(
-                By.Id("searchButton"))
-                .Click();
+            // Click search
+            IWebElement searchButton = driver.FindElement(By.Id("searchButton"));
+            searchButton.Click();
 
-            wait.Message = "Søgningen viste ikke én række med Song 2.";
-
+            // Wait for one matching result
             wait.Until(browser =>
-            {
-                var rows = browser.FindElement(By.Id("recordsBody"))
-                    .FindElements(By.TagName("tr"));
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 1);
 
-                return rows.Count == 1
-                    && rows[0].FindElements(By.TagName("td"))[1]
-                        .Text == "Song 2";
-            });
+            // Check result
+            var rows = driver.FindElements(By.CssSelector("#recordsBody tr"));
 
-            // Assert
-            var resultRows = driver.FindElement(By.Id("recordsBody"))
-                .FindElements(By.TagName("tr"));
+            Assert.Single(rows);
 
-            var row = Assert.Single(resultRows);
-            var cells = row.FindElements(By.TagName("td"));
+            var cells = rows[0].FindElements(By.TagName("td"));
 
             Assert.Equal("Song 2", cells[1].Text);
             Assert.Equal("Artist B", cells[2].Text);
         }
+
+
+        [Fact]
+        public void SearchByArtist_ShowsOnlyMatchingRecord()
+        {
+            driver.Navigate().GoToUrl(url);
+
+            // Wait for the three records to load
+            wait.Until(browser =>
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 3);
+
+            // Select search type
+            IWebElement searchType = driver.FindElement(By.Id("searchType"));
+            new SelectElement(searchType).SelectByValue("artist");
+
+            // Enter search value
+            IWebElement searchInput = driver.FindElement(By.Id("searchInput"));
+            searchInput.SendKeys("Artist B");
+
+            // Click search
+            IWebElement searchButton = driver.FindElement(By.Id("searchButton"));
+            searchButton.Click();
+
+            // Wait for one matching result
+            wait.Until(browser =>
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 1);
+
+            // Check result
+            var rows = driver.FindElements(By.CssSelector("#recordsBody tr"));
+
+            Assert.Single(rows);
+
+            var cells = rows[0].FindElements(By.TagName("td"));
+
+            Assert.Equal("Song 2", cells[1].Text);
+            Assert.Equal("Artist B", cells[2].Text);
+        }
+
+
+        [Fact]
+        public void SearchByMaxDuration_ShowsMatchingRecords()
+        {
+            driver.Navigate().GoToUrl(url);
+
+            // Wait for the three records to load
+            wait.Until(browser =>
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 3);
+
+            // Select search type
+            IWebElement searchType = driver.FindElement(By.Id("searchType"));
+            new SelectElement(searchType).SelectByValue("maxDuration");
+
+            // Enter search value
+            IWebElement searchInput = driver.FindElement(By.Id("searchInput"));
+            searchInput.SendKeys("210");
+
+            // Click search
+            IWebElement searchButton = driver.FindElement(By.Id("searchButton"));
+            searchButton.Click();
+
+            // Wait for two matching results
+            wait.Until(browser =>
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 2);
+
+            // Check results
+            var rows = driver.FindElements(By.CssSelector("#recordsBody tr"));
+
+            Assert.Equal(2, rows.Count);
+
+            Assert.Contains(rows, row =>
+                row.FindElements(By.TagName("td"))[1].Text == "Song 1");
+
+            Assert.Contains(rows, row =>
+                row.FindElements(By.TagName("td"))[1].Text == "Song 2");
+        }
+
+
+        [Fact]
+        public void SearchByPublicationYear_ShowsOnlyMatchingRecord()
+        {
+            driver.Navigate().GoToUrl(url);
+
+            // Wait for the three records to load
+            wait.Until(browser =>
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 3);
+
+            // Select search type
+            IWebElement searchType = driver.FindElement(By.Id("searchType"));
+            new SelectElement(searchType).SelectByValue("publicationYear");
+
+            // Enter search value
+            IWebElement searchInput = driver.FindElement(By.Id("searchInput"));
+            searchInput.SendKeys("2020");
+
+            // Click search
+            IWebElement searchButton = driver.FindElement(By.Id("searchButton"));
+            searchButton.Click();
+
+            // Wait for one matching result
+            wait.Until(browser =>
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 1);
+
+            // Check result
+            var rows = driver.FindElements(By.CssSelector("#recordsBody tr"));
+
+            Assert.Single(rows);
+
+            var cells = rows[0].FindElements(By.TagName("td"));
+
+            Assert.Equal("Song 1", cells[1].Text);
+            Assert.Equal("2020", cells[4].Text);
+        }
+
+
+        [Fact]
+        public void SearchByTitle_NoMatch_ShowsNoRecords()
+        {
+            driver.Navigate().GoToUrl(url);
+
+            // Wait for the three records to load
+            wait.Until(browser =>
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 3);
+
+            // Select search type
+            IWebElement searchType = driver.FindElement(By.Id("searchType"));
+            new SelectElement(searchType).SelectByValue("title");
+
+            // Enter search value
+            IWebElement searchInput = driver.FindElement(By.Id("searchInput"));
+            searchInput.SendKeys("NonExistingSong");
+
+            // Click search
+            IWebElement searchButton = driver.FindElement(By.Id("searchButton"));
+            searchButton.Click();
+
+            // Wait for no results
+            wait.Until(browser =>
+                browser.FindElements(By.CssSelector("#recordsBody tr")).Count == 0);
+
+            // Check result
+            var rows = driver.FindElements(By.CssSelector("#recordsBody tr"));
+
+            Assert.Empty(rows);
+        }
+
+
     }
 }
