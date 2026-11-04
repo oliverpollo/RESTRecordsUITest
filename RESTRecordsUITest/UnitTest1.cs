@@ -36,6 +36,7 @@ namespace RESTRecordsUITest
         public void SearchByTitle_ShowsOnlyMatchingRecord()
         {
             driver.Navigate().GoToUrl(url);
+            LoginBeforeSearch();
 
             // Wait for the three records to load
             wait.Until(browser =>
@@ -73,6 +74,7 @@ namespace RESTRecordsUITest
         public void SearchByArtist_ShowsOnlyMatchingRecord()
         {
             driver.Navigate().GoToUrl(url);
+            LoginBeforeSearch();
 
             // Wait for the three records to load
             wait.Until(browser =>
@@ -110,6 +112,7 @@ namespace RESTRecordsUITest
         public void SearchByMaxDuration_ShowsMatchingRecords()
         {
             driver.Navigate().GoToUrl(url);
+            LoginBeforeSearch();
 
             // Wait for the three records to load
             wait.Until(browser =>
@@ -148,6 +151,7 @@ namespace RESTRecordsUITest
         public void SearchByPublicationYear_ShowsOnlyMatchingRecord()
         {
             driver.Navigate().GoToUrl(url);
+            LoginBeforeSearch();
 
             // Wait for the three records to load
             wait.Until(browser =>
@@ -185,6 +189,7 @@ namespace RESTRecordsUITest
         public void SearchByTitle_NoMatch_ShowsNoRecords()
         {
             driver.Navigate().GoToUrl(url);
+            LoginBeforeSearch();
 
             // Wait for the three records to load
             wait.Until(browser =>
@@ -212,6 +217,32 @@ namespace RESTRecordsUITest
             Assert.Empty(rows);
         }
 
+
+        private void LoginBeforeSearch()
+        {
+            // Vent på, at Vue har vist loginformularen og skjult records.
+            wait.Message = "Loginformularen blev ikke klar før søgningen.";
+            wait.Until(browser =>
+                browser.FindElements(By.Id("recordsBody")).Count == 0
+                && browser.FindElement(
+                    By.CssSelector("#app input[placeholder='Username']")).Displayed);
+
+            IWebElement usernameInput = driver.FindElement(
+                By.CssSelector("#app input[placeholder='Username']"));
+            usernameInput.Clear();
+            usernameInput.SendKeys("admin");
+
+            IWebElement passwordInput = driver.FindElement(
+                By.CssSelector("#app input[type='password']"));
+            passwordInput.Clear();
+            passwordInput.SendKeys("1234");
+
+            IWebElement loginButton = driver.FindElement(
+                By.CssSelector("#app .card button"));
+            loginButton.Click();
+
+            wait.Message = "De tre records blev ikke indlæst efter login.";
+        }
 
     }
 }
